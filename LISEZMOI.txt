@@ -1,0 +1,51 @@
+SYNCHRONISATION AUTOMATIQUE — VIA GITHUB (SANS TERMINAL)
+============================================================
+
+Ce dossier contient l'appli + une fonction serveur qui stocke UNE
+seule base de données partagée sur Netlify (Netlify Blobs, déjà
+inclus dans ton compte, gratuit). Tous les appareils qui ouvrent le
+site se synchronisent automatiquement — rien à copier-coller.
+
+Tout se fait dans le navigateur, aucune commande à taper.
+
+ÉTAPE 1 — Mettre ce dossier sur GitHub
+----------------------------------------
+1. Va sur https://github.com et connecte-toi (ou crée un compte
+   gratuit si tu n'en as pas).
+2. Clique sur le "+" en haut à droite → "New repository".
+3. Donne-lui un nom (ex. "gestion-everest"), laisse le reste par
+   défaut, clique "Create repository".
+4. Sur la page du nouveau repository, clique sur le lien
+   "uploading an existing file".
+5. Dézippe ce fichier sur ton ordinateur, puis glisse TOUT le
+   contenu du dossier (index.html, netlify.toml, package.json, et
+   le dossier "netlify" en entier) dans la zone de dépôt.
+   (Utilise Chrome — Safari gère parfois mal le glisser-déposer de
+   dossiers sur GitHub.)
+6. En bas de page, clique "Commit changes".
+
+ÉTAPE 2 — Relier ce repository à ton site Netlify existant
+----------------------------------------
+1. Va sur https://app.netlify.com et ouvre ton site déjà utilisé
+   (celui dont l'adresse est sur tes 3 appareils).
+2. Site configuration → Build & deploy → Continuous deployment.
+3. Clique "Link repository" (ou "Link site to Git").
+4. Choisis GitHub, autorise l'accès si demandé, puis sélectionne le
+   repository que tu viens de créer.
+5. Quand Netlify demande les réglages de build : laisse tout vide
+   (pas de commande de build), et mets "." comme dossier à publier.
+6. Valide. Netlify déploie automatiquement — même adresse qu'avant.
+
+ÉTAPE 3 — Vérifier
+----------------------------------------
+Ouvre l'appli sur tes 3 appareils. En bas de la sidebar (ou en haut
+de la page Paramètres sur mobile), tu dois voir "🟢 Synchronisé".
+Toute modification sur un appareil apparaît sur les autres en
+quelques secondes.
+
+POUR LES PROCHAINES MISES À JOUR DE L'APPLI
+----------------------------------------
+Si je te renvoie une nouvelle version d'index.html : va sur ton
+repository GitHub, ouvre index.html, clique sur le crayon (Edit),
+supprime tout, colle le nouveau contenu, puis "Commit changes".
+Netlify redéploie automatiquement — toujours sans Terminal.
