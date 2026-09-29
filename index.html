@@ -319,14 +319,17 @@ const STORE_KEY = 'everest-gestion-v1';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
 const todayISO = () => new Date().toISOString().slice(0,10);
 
+function normalizeDB(data){
+  if(!data.catalogue) data.catalogue = [];
+  if(!data.fournitures) data.fournitures = [];
+  return data;
+}
 function loadDB(){
   let raw = localStorage.getItem(STORE_KEY);
   if(raw){
     try{
       const data = JSON.parse(raw);
-      if(!data.catalogue) data.catalogue = [];
-      if(!data.fournitures) data.fournitures = [];
-      return data;
+      return normalizeDB(data);
     }catch(e){}
   }
   return {
@@ -407,7 +410,7 @@ async function pullFromServer(){
     if(json.data && json.updatedAt && json.updatedAt > SERVER_UPDATED_AT){
       SERVER_UPDATED_AT = json.updatedAt;
       if(!openDrawer && ROUTE!=='devis-detail'){
-        DB = json.data;
+        DB = normalizeDB(json.data);
         localStorage.setItem(STORE_KEY, JSON.stringify(DB));
         render();
         toast('Données mises à jour');
