@@ -562,13 +562,21 @@ function render(){
 
 function renderMain(){
   const main = document.getElementById('main');
-  if(ROUTE==='dashboard') main.innerHTML = viewDashboard();
-  else if(ROUTE==='planning') main.innerHTML = viewPlanning();
-  else if(ROUTE==='devis') main.innerHTML = viewDevisList();
-  else if(ROUTE==='factures') main.innerHTML = viewFacturesList();
-  else if(ROUTE==='livre') main.innerHTML = viewLivre();
-  else if(ROUTE==='clients') main.innerHTML = viewClients();
-  else if(ROUTE==='settings') main.innerHTML = viewSettings();
+  try{
+    if(ROUTE==='dashboard') main.innerHTML = viewDashboard();
+    else if(ROUTE==='planning') main.innerHTML = viewPlanning();
+    else if(ROUTE==='devis') main.innerHTML = viewDevisList();
+    else if(ROUTE==='factures') main.innerHTML = viewFacturesList();
+    else if(ROUTE==='livre') main.innerHTML = viewLivre();
+    else if(ROUTE==='clients') main.innerHTML = viewClients();
+    else if(ROUTE==='settings') main.innerHTML = viewSettings();
+  }catch(e){
+    main.innerHTML = `<div class="card card-pad" style="border-color:var(--danger);">
+      <div style="font-weight:800;color:var(--danger);margin-bottom:8px;">Erreur d'affichage</div>
+      <div style="font-size:13px;color:var(--ink-soft);white-space:pre-wrap;font-family:'JetBrains Mono',monospace;">${esc(e.message)}\n\n${esc((e.stack||'').slice(0,600))}</div>
+    </div>`;
+    return;
+  }
   bindMainEvents();
 }
 
