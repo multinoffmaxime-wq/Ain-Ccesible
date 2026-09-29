@@ -325,6 +325,7 @@ function loadDB(){
     try{
       const data = JSON.parse(raw);
       if(!data.catalogue) data.catalogue = [];
+      if(!data.fournitures) data.fournitures = [];
       return data;
     }catch(e){}
   }
@@ -346,7 +347,8 @@ function loadDB(){
     devis:[],
     factures:[],
     planning:[],
-    catalogue:[]
+    catalogue:[],
+    fournitures:[]
   };
 }
 function saveDB(){
@@ -935,6 +937,25 @@ function viewSettings(){
     </div>
 
     <div class="card card-pad" style="margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="section-title" style="margin-bottom:0;">Catalogue de fournitures</div>
+        <button class="btn outline sm" data-new-fourniture type="button">${ICONS.plus} Ajouter</button>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Séparé du catalogue de prestations — utile pour facturer les fournitures à part de la main d'œuvre.</p>
+      ${DB.fournitures.length ? `<div class="list-wrap"><table><thead><tr><th>Désignation</th><th>Prix vente HT</th><th>Achat / Marge</th><th></th></tr></thead><tbody>
+        ${DB.fournitures.map(it=>`<tr>
+          <td>${esc(it.desc)}${it.comment?`<div style="font-size:12px;color:var(--muted);font-style:italic;white-space:pre-wrap;">${esc(it.comment)}</div>`:''}</td>
+          <td class="mono">${eur(it.price)}</td>
+          <td class="mono" style="font-size:12px;color:var(--muted);">${it.buyPrice!=null?eur(it.buyPrice):'—'} · +${it.marginPercent!=null?it.marginPercent:0}%</td>
+          <td style="text-align:right;white-space:nowrap;">
+            <button class="btn ghost sm" data-edit-fourniture="${it.id}" type="button">Modifier</button>
+            <button class="btn ghost sm" data-delete-fourniture="${it.id}" type="button" style="color:var(--danger);">Suppr.</button>
+          </td>
+        </tr>`).join('')}
+      </tbody></table></div>` : `<p style="font-size:13px;color:var(--muted);">Aucune fourniture enregistrée.</p>`}
+    </div>
+
+    <div class="card card-pad" style="margin-bottom:18px;">
       <div class="section-title">Sauvegarde</div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Toutes les données (clients, devis, factures, planning) sont stockées uniquement sur cet appareil, dans ce navigateur. Exportez régulièrement une sauvegarde.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -1006,6 +1027,16 @@ function bindMainEvents(){
   main.querySelectorAll('[data-delete-catalogue]').forEach(el=>el.onclick=()=>{
     DB.catalogue = DB.catalogue.filter(x=>x.id!==el.dataset.deleteCatalogue);
     saveDB(); toast('Prestation supprimée'); renderMain();
+  });
+
+  main.querySelectorAll('[data-new-fourniture]').forEach(el=>el.onclick=()=>{ openDrawer={type:'fourniture',data:null}; render(); });
+  main.querySelectorAll('[data-edit-fourniture]').forEach(el=>el.onclick=()=>{
+    openDrawer = {type:'fourniture', data: DB.fournitures.find(x=>x.id===el.dataset.editFourniture)};
+    render();
+  });
+  main.querySelectorAll('[data-delete-fourniture]').forEach(el=>el.onclick=()=>{
+    DB.fournitures = DB.fournitures.filter(x=>x.id!==el.dataset.deleteFourniture);
+    saveDB(); toast('Fourniture supprimée'); renderMain();
   });
 
   const printBtn = main.querySelector('[data-print-livre]');
@@ -1114,6 +1145,7 @@ function drawerContent(){
   if(openDrawer.type==='devis') return devisFormDrawerHTML(openDrawer.data);
   if(openDrawer.type==='facture') return factureFormDrawerHTML(openDrawer.data);
   if(openDrawer.type==='catalogue') return catalogueDrawerHTML(openDrawer.data);
+  if(openDrawer.type==='fourniture') return fournitureDrawerHTML(openDrawer.data);
   return '';
 }
 
@@ -1129,6 +1161,29 @@ function catalogueDrawerHTML(it){
       <button class="btn primary" data-save-catalogue>Enregistrer</button>
       <button class="btn outline" data-close>Annuler</button>
       ${!isNew?`<button class="btn danger" data-delete-catalogue-item="${it.id}" style="margin-left:auto;">Supprimer</button>`:''}
+    </div>
+  </div>`;
+}
+function fournitureDrawerHTML(it){
+  const isNew = !it;
+  const buyPrice = it&&it.buyPrice!=null ? it.buyPrice : '';
+  const margin = it&&it.marginPercent!=null ? it.marginPercent : '';
+  return `<div class="drawer">
+    <div class="drawer-head"><h2>${isNew?'Nouvelle fourniture':'Modifier la fourniture'}</h2><button class="close-x" data-close>✕</button></div>
+    <div class="field"><label>Désignation</label><input id="fn-desc" value="${esc(it?it.desc:'')}" placeholder="Ex. Silicone, mastic, peinture..."></div>
+    <div class="field-row">
+      <div class="field"><label>Prix d'achat HT</label><input id="fn-buyprice" type="number" step="0.01" value="${buyPrice}"></div>
+      <div class="field"><label>Marge (%)</label><input id="fn-margin" type="number" step="0.1" value="${margin}"></div>
+    </div>
+    <div class="totals-box" style="margin-top:0;margin-bottom:14px;">
+      <div class="row grand"><span>Prix de vente HT</span><span class="mono" id="fn-sellprice-display">${eur(it&&it.price!=null?it.price:0)}</span></div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:-8px;margin-bottom:14px;">Seul le prix de vente apparaît sur les devis et factures — le prix d'achat et la marge restent internes.</p>
+    <div class="field"><label>Commentaire (optionnel, affiché en gris italique sous la désignation)</label><textarea id="fn-comment" placeholder="Ex. Prix au litre">${esc(it?it.comment:'')}</textarea></div>
+    <div class="drawer-actions">
+      <button class="btn primary" data-save-fourniture>Enregistrer</button>
+      <button class="btn outline" data-close>Annuler</button>
+      ${!isNew?`<button class="btn danger" data-delete-fourniture-item="${it.id}" style="margin-left:auto;">Supprimer</button>`:''}
     </div>
   </div>`;
 }
@@ -1202,6 +1257,7 @@ function lineItemsHTML(items, tvaApplicable){
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn outline sm" data-add-line type="button">${ICONS.plus} Ligne vide</button>
       ${DB.catalogue.length?`<button class="btn outline sm" data-toggle-forfaits type="button">${ICONS.plus} Choisir un forfait</button>`:''}
+      ${DB.fournitures.length?`<button class="btn outline sm" data-toggle-fournitures type="button">${ICONS.plus} Choisir une fourniture</button>`:''}
     </div>
     ${DB.catalogue.length?`<div id="forfait-picker" class="forfait-grid" style="display:none;">
       ${DB.catalogue.map(it=>`<button type="button" class="forfait-card" data-pick-forfait="${it.id}">
@@ -1209,7 +1265,13 @@ function lineItemsHTML(items, tvaApplicable){
         <div class="fp mono">${eur(it.price)}</div>
       </button>`).join('')}
     </div>`:''}
-    <datalist id="catalogue-datalist">${DB.catalogue.map(it=>`<option value="${esc(it.desc)}"></option>`).join('')}</datalist>
+    ${DB.fournitures.length?`<div id="fourniture-picker" class="forfait-grid" style="display:none;">
+      ${DB.fournitures.map(it=>`<button type="button" class="forfait-card" data-pick-fourniture="${it.id}">
+        <div class="fd">${esc(it.desc)}</div>
+        <div class="fp mono">${eur(it.price)}</div>
+      </button>`).join('')}
+    </div>`:''}
+    <datalist id="catalogue-datalist">${[...DB.catalogue,...DB.fournitures].map(it=>`<option value="${esc(it.desc)}"></option>`).join('')}</datalist>
   `;
 }
 function lineRowHTML(it,i,tvaApplicable){
@@ -1370,6 +1432,26 @@ function bindDrawerEvents(){
         };
       });
     }
+
+    const toggleFournituresBtn = ov.querySelector('[data-toggle-fournitures]');
+    const fournyPicker = ov.querySelector('#fourniture-picker');
+    if(toggleFournituresBtn && fournyPicker){
+      toggleFournituresBtn.onclick = ()=>{
+        fournyPicker.style.display = fournyPicker.style.display==='none' ? 'grid' : 'none';
+      };
+      fournyPicker.querySelectorAll('[data-pick-fourniture]').forEach(card=>{
+        card.onclick = ()=>{
+          const it = DB.fournitures.find(x=>x.id===card.dataset.pickFourniture);
+          if(!it) return;
+          const wrap = ov.querySelector('#li-rows');
+          const idx = wrap.children.length;
+          wrap.insertAdjacentHTML('beforeend', lineRowHTML({desc:it.desc,qty:1,unitPrice:it.price,tva:DB.settings.tvaDefault,comment:it.comment||''}, idx, tvaApplicable));
+          bindLineRowEvents(tvaApplicable);
+          refreshTotalsPreview(tvaApplicable);
+          toast('Fourniture ajoutée');
+        };
+      });
+    }
   }
 
   if(openDrawer.type==='event'){
@@ -1520,6 +1602,38 @@ function bindDrawerEvents(){
       saveDB(); openDrawer=null; toast('Prestation supprimée'); render();
     };
   }
+
+  if(openDrawer.type==='fourniture'){
+    const buyInput = ov.querySelector('#fn-buyprice');
+    const marginInput = ov.querySelector('#fn-margin');
+    const sellDisplay = ov.querySelector('#fn-sellprice-display');
+    const updateSellPrice = ()=>{
+      const buy = parseFloat(buyInput.value)||0;
+      const margin = parseFloat(marginInput.value)||0;
+      sellDisplay.textContent = eur(buy * (1 + margin/100));
+    };
+    if(buyInput && marginInput){
+      buyInput.oninput = updateSellPrice;
+      marginInput.oninput = updateSellPrice;
+    }
+    const saveBtn = ov.querySelector('[data-save-fourniture]');
+    if(saveBtn) saveBtn.onclick = ()=>{
+      const desc = document.getElementById('fn-desc').value.trim();
+      if(!desc){ toast('Désignation requise'); return; }
+      const buyPrice = parseFloat(document.getElementById('fn-buyprice').value)||0;
+      const marginPercent = parseFloat(document.getElementById('fn-margin').value)||0;
+      const price = Math.round(buyPrice * (1 + marginPercent/100) * 100) / 100;
+      const comment = document.getElementById('fn-comment').value.trim();
+      if(openDrawer.data){ Object.assign(openDrawer.data, {desc, buyPrice, marginPercent, price, comment}); }
+      else { DB.fournitures.push({id:uid(), desc, buyPrice, marginPercent, price, comment}); }
+      saveDB(); openDrawer=null; toast('Fourniture enregistrée'); render();
+    };
+    const delBtn = ov.querySelector('[data-delete-fourniture-item]');
+    if(delBtn) delBtn.onclick = ()=>{
+      DB.fournitures = DB.fournitures.filter(x=>x.id!==delBtn.dataset.deleteFournitureItem);
+      saveDB(); openDrawer=null; toast('Fourniture supprimée'); render();
+    };
+  }
 }
 
 function bindLineRowEvents(tvaApplicable){
@@ -1527,7 +1641,7 @@ function bindLineRowEvents(tvaApplicable){
   ov.querySelectorAll('#li-rows input').forEach(inp=>{
     inp.oninput = ()=>{
       if(inp.dataset.li==='desc'){
-        const match = DB.catalogue.find(it=>it.desc===inp.value);
+        const match = [...DB.catalogue,...DB.fournitures].find(it=>it.desc===inp.value);
         if(match){
           const row = inp.closest('[data-line]');
           row.querySelector('[data-li=unitPrice]').value = match.price;
@@ -1581,7 +1695,7 @@ function printableDocHTML(kind, doc){
     <div class="print-sheet">
       <div class="ps-top">
         <div class="ps-company">
-          <img src="${LOGO_DATA_URL}" alt="${esc(s.companyName)}" style="display:block;width:140px;max-width:100%;height:auto;margin-bottom:12px;">
+          <img src="${LOGO_DATA_URL}" alt="${esc(s.companyName)}" style="display:block;width:160px;max-width:100%;height:auto;margin-bottom:12px;">
           ${s.address?`${esc(s.address)}<br>`:''}
           ${s.zipCity?`${esc(s.zipCity)}<br>`:''}
           ${s.siret?`SIRET : ${esc(s.siret)}<br>`:''}
@@ -1612,7 +1726,7 @@ function printableDocHTML(kind, doc){
         </tbody>
       </table>
       <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;">
-        <img src="${LOGO2_DATA_URL}" alt="" style="width:150px;height:auto;opacity:.25;">
+        <img src="${LOGO2_DATA_URL}" alt="" style="width:150px;height:auto;opacity:.10;">
       <div class="ps-totals">
         <div class="row"><span>Total HT</span><span>${eur(t.ht)}</span></div>
         ${doc.tvaApplicable?`<div class="row"><span>TVA</span><span>${eur(t.tva)}</span></div>`:`<div class="row"><span colspan=2 style="font-size:11px;">TVA non applicable, art. 293 B du CGI</span></div>`}
